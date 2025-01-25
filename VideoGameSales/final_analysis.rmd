@@ -1,1 +1,95 @@
+---
+title: "VideoGameSales"
+author: "Cody B"
+date: "`r Sys.Date()`"
+output: github_document
+---
 
+This analysis examines trends in video game sales by analyzing data from titles 
+released between 1971 and 2024. Specifically, it focuses on the total number of 
+video game releases and the average sales figures across different genres. 
+Additionally, the study explores sales data for video games by console, analyzing 
+both the total releases and average sales per platform
+
+The "Video Game Sales" data set can be found here: 
+<https://mavenanalytics.io/data-playground?page=2&pageSize=5>.
+
+
+```{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+```
+
+```{r, echo=FALSE}
+vgchartz_2024 <- read_csv("VideoGameSales/vgchartz-2024.csv", col_types = cols(img = col_skip()))
+```
+
+
+## Genre
+
+
+```{r echo=FALSE}
+ggplot(data = vgchartz_2024) +
+  geom_bar(mapping = aes(x = genre), stat = "count", fill = "cadetblue4", colour = "black") +
+  scale_x_discrete(limits = names(sort(table(vgchartz_2024$genre), decreasing = TRUE))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Number Of Video Games Released By Genre", x = "Genre", y = "Number Of Video Games Released")
+```
+
+As demonstrated, the "Miscellaneous" genre has the highest total video game releases 
+from 1971 to 2024. Following closely are the "Action," "Adventure," "Role Playing," 
+and "Sports" genres.
+
+To gain deeper insights, it would be valuable to further analyze the "Miscellaneous" 
+genre to better understand the specific types of games included within it.
+
+
+```{r echo=FALSE}
+mean_sales <- vgchartz_2024 %>%
+  group_by(genre) %>%
+  summarize(mean_sales = mean(total_sales, na.rm = T), n_obs = n(), .groups = "drop") %>%
+  arrange(desc(mean_sales))
+  
+ggplot(data = mean_sales) +
+  geom_bar(mapping = aes(x = reorder(genre, mean_sales, decreasing = T), y = mean_sales), stat = "identity", fill = "cadetblue4", colour = "black") +
+  geom_text(aes(x = reorder(genre, mean_sales, decreasing = TRUE), y = mean_sales, label = paste(n_obs)), vjust = -0.5, colour = "black", size = 3) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Mean Total Sales By Genre", x = "Genre", y = "Mean Total Sales (millions)") + 
+  annotate("text", x = 7, y = .7, label = "Number of observations above bars", size = 3)
+```
+
+On average, video games categorized as "Sandbox" generate the highest total sales 
+compared to other genres. The "Shooter," "Action-Adventure," "Sports," and "Action" 
+genres also demonstrate strong sales performance.
+
+## Console
+
+```{r echo=FALSE}
+filtered_data <- vgchartz_2024 %>%
+  group_by(console) %>%
+  summarize(n_obs = n(), .groups = "drop") %>%
+  filter(n_obs > 750)
+  
+ggplot(data = filtered_data) +
+  geom_bar(mapping = aes(x = reorder(console, n_obs, decreasing = T), y = n_obs), stat = "identity", fill = "cadetblue4", colour = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(title = "Number of Video Games Released By Console (> 750)", x = "Console", y = "Number of Video Games Released")
+```
+
+Between 1971 and 2024, more video games were released for PC than for any other console. 
+Notably, it also appears that PlayStation consoles have seen more game releases than Xbox consoles.
+
+```{r, echo=FALSE}
+mean_sales <- vgchartz_2024 %>%
+  group_by(console) %>%
+  summarize(mean_sales = mean(total_sales, na.rm = T), n_obs = n(), .groups = "drop") %>%
+  filter(mean_sales > 0.18) %>%
+  arrange(desc(mean_sales))
+  
+ggplot(data = mean_sales) +
+  geom_bar(mapping = aes(x = reorder(console, mean_sales, decreasing = T), y = mean_sales), stat = "identity", fill = "cadetblue4", colour = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(title = "Mean Total Sales By Console (> 0.18)", x = "Console", y = "Mean Total Sales (millions)")
+```
+
+On average, video games released for the Gameboy Color sold more copies than those 
+on any other console.
